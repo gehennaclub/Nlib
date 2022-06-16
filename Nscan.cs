@@ -27,7 +27,7 @@ public class Nscan
                 up.Add(c);
             else if (c >= 'a' && c <= 'z')
                 low.Add(c);
-            else if (c >= '0' && c <= '1')
+            else if (c >= '0' && c <= '9')
                 number.Add(c);
             else
                 special.Add(c);
