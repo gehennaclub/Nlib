@@ -10,6 +10,7 @@ public class Nhash
         public static List<byte> result { get; set; }
         public static int size = 128;
         public static int salt_size = 256;
+        public static int iterations_multiplicator = 10;
     }
 
     public class Tools
@@ -65,9 +66,13 @@ public class Nhash
 
         public static void generate_salt()
         {
-            for (int i = 0; i < Settings.salt_size - Settings.salt.Count(); i++)
+            int index = 0;
+
+            for (int i = 0; i < Settings.salt_size - Settings.salt.Count(); i++, index++)
             {
-                Settings.salt.Add(0x00);
+                if (index >= Settings.key.Count())
+                    index = 0;
+                Settings.salt.Add(Settings.key[index]);
             }
         }
 
@@ -84,9 +89,10 @@ public class Nhash
         }
     }
 
-    public Nhash(string key)
+    public Nhash(string key, int iterations_muliplicator)
     {
         Settings.key = Encoding.ASCII.GetBytes(key).ToList();
+        Settings.iterations_multiplicator = iterations_muliplicator;
         Tools.generate_salt();
     }
 
@@ -97,7 +103,6 @@ public class Nhash
 
         Tools.add(result, Settings.salt);
         Tools.add(result, Tools.rotate(Tools.dealign(Tools.rotate(bytes.ToList()))));
-
         Settings.result = compress(result);
 
         return (Tools.bts(Settings.result));
@@ -108,7 +113,7 @@ public class Nhash
         int start = 7;
         int index = start;
         int key_index = 0;
-        int iterations = 0;
+        int iterations = 1;
 
         for (int i = start; i < bytes.Count; i++, index++)
         {
@@ -133,7 +138,7 @@ public class Nhash
                     iterations++;
                 }
                 bytes[index] = (byte)(
-                    ((bytes[index] + Settings.key[key_index] / (iterations + 2)) ^ bytes[i % bytes.Count]) |
+                    ((bytes[index] + Settings.key[key_index] / (iterations * Settings.iterations_multiplicator)) ^ bytes[i % bytes.Count]) |
                     ((bytes[index] >> iterations) ^ (Settings.key[key_index] >> Settings.key[0]))
                 );
                 key_index++;
@@ -144,8 +149,18 @@ public class Nhash
         return (bytes);
     }
 
-    public void dump(string path)
+    public void display()
     {
-        File.WriteAllBytes(path, Settings.result.ToArray());
+        string buffer = "";
+
+        foreach (byte b in Settings.result)
+        {
+            if (b >= 33 && b <= 126)
+                buffer += (char)b;
+            else
+                buffer += '.';
+        }
+
+        Console.WriteLine(buffer);
     }
 }
